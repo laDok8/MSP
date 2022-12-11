@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# ## 1 Úkol
+# ## 1. Úkol
 
-# In[82]:
+# In[ ]:
 
 
 # zadáni 4
@@ -17,7 +17,7 @@ from matplotlib import cm
 
 # Import dat, kde poslední sloupec tvoří mnou zjištěné hodnoty.
 
-# In[83]:
+# In[ ]:
 
 
 # data 1
@@ -32,9 +32,9 @@ indifferent = np.array([208, 129, 70, 74, 6, 19, 32, 2])
 
 
 # Pro zjištění rovnosti procentuálního zastoupení obyvatel měst použijeme test dobré shody.
-# H_0 : p_1 = p_2 ... = p_8
+# $H_0 : p_1 = p_2 ... = p_8$
 
-# In[84]:
+# In[ ]:
 
 
 def chi_test(str, cat, count, dof=1):
@@ -48,12 +48,12 @@ chi_test("change", change, count)
 print("critical value: ", stats.chi2.ppf(0.95, 6))
 
 
-# Pro zimní čas zamítamé H_0 (p < 0.05), tudíž se percentuální zastoupení mezi městy liší.
-# Pro změnu času a letní čas H_0 nezamítamé.
+# Pro zimní čas zamítamé $H_0$ (p < 0.05), tudíž se percentuální zastoupení mezi městy liší.
+# Pro změnu času a letní čas $H_0$ nezamítamé.
 
 # Pro zjištění rovnosti procentuálního zastoupení mezi různě velkými městy (velké, střední, malé) použijeme obdobný test nad seskupenými daty.
 
-# In[85]:
+# In[ ]:
 
 
 # group by city
@@ -64,13 +64,13 @@ chi_test("group_winter", city_group['winter'], city_group['count'])
 chi_test("group_indifferent", city_group['indifferent'], city_group['count'])
 
 
-# H_0 zamítáme jak pro zimní čas, tak pro nerozhodnuté obyvatele.
+# $H_0$ zamítáme jak pro zimní čas, tak pro nerozhodnuté obyvatele.
 
-# Pro odhadnutí z které skupiny student pocházi (velké, střední, malé) použijeme opět chi^2 test. Očekávané hodnoty pro tuto analýzu tvoři bodový odhad z daných skupin.
+# Pro odhadnutí z které skupiny student pocházi (velké, střední, malé) použijeme opět $\chi^2$ test. Očekávané hodnoty pro příslušnost studenta tvoři bodový odhad z daných skupin.
 
 # 
 
-# In[86]:
+# In[ ]:
 
 
 city_group = pd.DataFrame(
@@ -93,11 +93,15 @@ chi_test("student=medium city", student, city_group.loc['medium'].values, dof=0)
 chi_test("student=small city", student, city_group.loc['small'].values, dof=0)
 
 
-# ## 2 Úkol
+# Ze získaných dat nelze vyvodit příslušnost studenta do kterékoliv skupiny (p> 0.05 pro každou skupinu).
+# Závěr nejde vyvodit nejspíše kvůli podobnosti kategorii a malému vzorku mých dat, avšak největší podobnost se ukazuje ke středně velkým městům.
+# 
+
+# ## 2. Úkol
 
 # import dat
 
-# In[87]:
+# In[ ]:
 
 
 # data2
@@ -130,7 +134,7 @@ z = np.array(
 
 # Pomocné funkce pro vizualizaci regrese.
 
-# In[88]:
+# In[ ]:
 
 
 x1 = np.linspace(0, 20, 100)
@@ -152,12 +156,16 @@ def plot_3d(x, y, z, x1, y1, z1):
     plt.show()
 
 
-# In[89]:
+# Vypočtená statistika pro obecnou kvadratickou regresi
+
+# In[ ]:
 
 
+# alpha = .05 is default
 F = sm.add_constant(np.column_stack((x, y, x ** 2, y ** 2, x * y)))
 modelres = sm.OLS(z, F).fit()
 print(modelres.summary(xname=['const', 'x', 'y', 'x^2', 'y^2', 'xy']))
+print()
 print('R^2', modelres.rsquared)
 
 z1 = modelres.predict(sm.add_constant(
@@ -167,20 +175,33 @@ z1 = modelres.predict(sm.add_constant(
 plot_3d(x, y, z, x1, y1, z1)
 
 
-# In[90]:
+# Pro redukci modelu využijeme T-test na nulovou hodnotu koeficientu.
+# Koeficient můžeme při analýze zanedbat při zamítnuti nulové hypotézy rovnosti parametrů ((P>|t|) > 0.05).
+
+# In[ ]:
 
 
-print(modelres.t_test("x2 = 0"))
-print(modelres.t_test("x5 = 0"))
+print(modelres.t_test("x5 = 0"))  #xy
+
+F = sm.add_constant(np.column_stack((x, y, x ** 2, y ** 2)))
+modelres = sm.OLS(z, F).fit()
+
+print(modelres.t_test("x2 = 0"))  #y
 
 
-# In[91]:
+# Výsledný regresní model: $Z = B_1 + B_2X + B_3X^2 + B_4Y^2$.
+# 2b) Hodnoty koeficientů jsou vyznačeny v tabulce pod sloupcem "coef".
+# 95% interval spolehlivosti je vyznačen v posledních 2 sloupcích [0.025      0.975].
+
+# In[ ]:
 
 
 F = sm.add_constant(np.column_stack((x, x ** 2, y ** 2)))
 modelres = sm.OLS(z, F).fit()
 print(modelres.summary(xname=['const', 'x', 'x^2', 'y^2']))
+print()
 print('R^2', modelres.rsquared)
+print("rozptyl závislé proměnné", modelres.mse_resid)
 
 z1 = modelres.predict(sm.add_constant(
     np.column_stack((x1.ravel(), x1.ravel() ** 2, y1.ravel() ** 2)))).reshape(
@@ -188,38 +209,28 @@ z1 = modelres.predict(sm.add_constant(
 plot_3d(x, y, z, x1, y1, z1)
 
 
-# In[92]:
+# Pro test rovnosti na nulu dvou koeficientů zárověn jsem zvolil F-test s $B_0$ a $B_1$.
+# $H_0$: $B_0 = B_1 = 0$
+# 
+
+# In[ ]:
 
 
 print(modelres.f_test("const = x1 = 0"))
 
 
-# In[93]:
+# Na hladině významnosti $\alpha = 0.05$ ((P>|t|) < 0.05) zamítáme $H_0$, koeficienty se tudíž zároveň liší od nuly.
+
+# 
+
+# Pro test rovnosti dvou koeficientů jsem zvolil T-test mezi $B_0$ a $B_1$.
+# $H_0$: $B_0 = B_1$
+# 
+
+# In[ ]:
 
 
-print(modelres.t_test("const = x1 "))  #TODO kam
+print(modelres.t_test("const = x1 "))
 
 
-# In[93]:
-
-
-
-
-
-# In[93]:
-
-
-
-
-
-# In[93]:
-
-
-
-
-
-# In[93]:
-
-
-
-
+# Na hladině významnosti $\alpha = 0.05$ ((P>|t|) < 0.05) zamítáme $H_0$, koeficienty se tudíž liší.
